@@ -1,0 +1,24 @@
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${API-KEY}
+      model-name: deepseek-reasoner
+      base-url: https://api.deepseek.com/v1
+      log-requests: true
+      log-responses: true
+
+
+    streaming-chat-model:
+      base-url: https://api.deepseek.com/v1
+      api-key: ${API-KEY}
+      model-name: deepseek-reasoner
+      log-requests: true
+      log-responses: true
+
+
+spring:
+  cache:
+    redis:
+      host: localhost
+      port: 6379
+
