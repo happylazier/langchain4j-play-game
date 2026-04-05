@@ -1,5 +1,6 @@
 package org.example.aicode.aiservice;
 
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;
@@ -10,7 +11,8 @@ import reactor.core.publisher.Flux;
         wiringMode = AiServiceWiringMode.EXPLICIT,
         chatModel = "openAiChatModel",
         streamingChatModel= "openAiStreamingChatModel",
-        chatMemoryProvider = "chatMemoryProvider"
+        chatMemoryProvider = "chatMemoryProvider",
+        contentRetriever = "contentRetriever"
 
 )
 public interface Aiservice {
