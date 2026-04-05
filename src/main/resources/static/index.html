@@ -14,8 +14,17 @@
             <button id="newSession" class="create-btn" title="新建会话">新建</button>
         </div>
         <div class="sessions" id="sessions"></div>
-        <div style="padding:10px;border-top:1px solid #f0f4fb;">
+        <!-- 将上传控件放回侧边栏底部（可见 file input + 上传 按钮） -->
+        <div style="padding:10px;border-top:1px solid #f0f4fb;display:flex;flex-direction:column;gap:8px;">
             <div class="small">会话会保存在浏览器本地，会话 ID 将在发送请求时随请求体发送给后端。</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                <label class="small" style="font-weight:600">上传文件（将发送到 /upload）</label>
+                <input type="file" id="fileInput" />
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="uploadBtn" class="create-btn" style="padding:6px 10px;font-size:13px">上传</button>
+                    <div id="uploadStatus" class="small muted">未上传</div>
+                </div>
+            </div>
         </div>
     </div>
 

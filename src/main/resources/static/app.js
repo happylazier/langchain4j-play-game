@@ -7,7 +7,8 @@ function saveSessions(s){ localStorage.setItem(SESSIONS_KEY, JSON.stringify(s));
 function createSession(name){
   const id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,9);
   const sessions = loadSessions();
-  sessions[id] = { id, name: name||('会话 '+(Object.keys(sessions).length+1)), messages: [] };
+  // 添加 created 时间用于排序（新会话在上方）
+  sessions[id] = { id, name: name||('会话 '+(Object.keys(sessions).length+1)), messages: [], created: Date.now() };
   saveSessions(sessions);
   return sessions[id];
 }
@@ -25,6 +26,7 @@ const sessionIdDisplay = document.getElementById('sessionIdDisplay');
 let currentSession = null;
 let sending = false;
 let controller = null;
+let uploadInProgress = false; // 新增：防重入
 // track current loading bubble so we can reliably remove its loading indicator
 let currentLoadingBubble = null;
 
@@ -56,8 +58,16 @@ function renderSessionList(){
   sessionsEl.innerHTML = '';
   const keys = Object.keys(sessions);
   if(keys.length===0){ sessionsEl.innerHTML = '<div class="small" style="padding:12px">暂无会话，点击“新建”开始</div>'; return; }
-  keys.forEach(id=>{
-    const s = sessions[id];
+
+  // 将会话对象转为数组并按 created 倒序排序，新会话显示在上方
+  const list = Object.values(sessions).slice().sort((a,b)=>{
+    const ta = a && a.created ? a.created : 0;
+    const tb = b && b.created ? b.created : 0;
+    return tb - ta;
+  });
+
+  list.forEach(s=>{
+    const id = s.id;
     const item = document.createElement('div');
     item.className = 'session-item' + (currentSession && currentSession.id===id ? ' active' : '');
     item.innerHTML = `<div style="flex:1"><div class="session-meta">${escapeHtml(s.name)}</div><div class="session-sub small">${(s.messages?.length||0)} 条消息</div></div>`;
@@ -170,6 +180,76 @@ async function sendMessage(){
   }
 }
 
+// 新增：上传函数（AJAX 优先）
+async function uploadFile(){
+  if(uploadInProgress) { console.warn('upload already in progress'); return; }
+  uploadInProgress = true;
+  try{
+    const fileInputEl = document.getElementById('fileInput');
+    const uploadStatusEl = document.getElementById('uploadStatus');
+    if(!fileInputEl || !fileInputEl.files || !fileInputEl.files[0]){ if(uploadStatusEl) uploadStatusEl.textContent = '请选择文件'; uploadInProgress = false; return; }
+    const file = fileInputEl.files[0];
+    if(uploadStatusEl) uploadStatusEl.textContent = '上传中...';
+    const form = new FormData(); form.append('file', file, file.name);
+    const res = await fetch('/upload', { method: 'POST', body: form });
+    if(!res.ok){ const txt = await res.text().catch(()=>res.statusText); if(uploadStatusEl) uploadStatusEl.textContent = '上传失败: '+(txt||res.status); alert('上传失败: '+(txt||res.status)); uploadInProgress=false; return; }
+    if(uploadStatusEl) uploadStatusEl.textContent = '上传成功';
+    alert('上传成功: '+file.name);
+    setTimeout(()=>{ if(uploadStatusEl && uploadStatusEl.textContent==='上传成功') uploadStatusEl.textContent='未选择文件'; }, 2000);
+  }catch(e){ console.error('uploadFile error', e); const uploadStatusEl = document.getElementById('uploadStatus'); if(uploadStatusEl) uploadStatusEl.textContent = '上传错误'; alert('上传出错: '+(e.message||e)); }
+  finally{ uploadInProgress = false; }
+}
+
+// 新增：初始化上传控件的方法，确保多时机绑定并暴露 uploadFile
+function initUploadControls(){
+  try{
+    if(window.__uploadControlsInit) return; // 防止重复初始化
+    const fileInputEl = document.getElementById('fileInput');
+    const uploadBtnEl = document.getElementById('uploadBtn');
+    const uploadStatusEl = document.getElementById('uploadStatus');
+    if(!fileInputEl){ console.log('initUploadControls: fileInput not found'); return; }
+
+    // 初始按钮状态
+    // 允许上传按钮在未选中文件时仍可点击（点击会弹出文件选择），以避免用户误以为按钮无反应
+    if(uploadBtnEl) uploadBtnEl.disabled = false;
+
+    // 选择文件时显示文件名并启用上传按钮
+    fileInputEl.addEventListener('change', function(){
+      try{
+        if(this.files && this.files[0]){
+          if(uploadStatusEl) uploadStatusEl.textContent = this.files[0].name;
+          if(uploadBtnEl) uploadBtnEl.disabled = false;
+        } else {
+          if(uploadStatusEl) uploadStatusEl.textContent = '未选择文件';
+          if(uploadBtnEl) uploadBtnEl.disabled = false; // 保持可点击以允许打开对话
+        }
+      }catch(e){ console.error('fileInput change handler error', e); }
+    });
+
+    // 上传按钮触发上传（防重且有提示）
+    if(uploadBtnEl){
+      uploadBtnEl.addEventListener('click', function(e){
+        try{
+          e.preventDefault(); console.log('uploadBtn clicked');
+          // 如果尚未选择文件，则打开文件选择对话而不是显示错误（更友好）
+          if(!fileInputEl || !fileInputEl.files || !fileInputEl.files[0]){
+            if(fileInputEl) fileInputEl.click();
+            if(uploadStatusEl) uploadStatusEl.textContent = '请选择文件';
+            return;
+          }
+          // 否则开始上传
+          uploadFile();
+        }catch(err){ console.error('uploadBtn click handler', err); }
+      });
+    }
+
+    // 暴露到全局，便于调试或内联回退使用
+    window.uploadFile = uploadFile;
+    window.__uploadControlsInit = true;
+    console.log('upload controls initialized');
+  }catch(err){ console.error('initUploadControls failed', err); }
+}
+
 // auto resize textarea
 function autosizeTextarea(el){ el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
 input.addEventListener('input', ()=> autosizeTextarea(input));
@@ -180,4 +260,20 @@ newBtn.addEventListener('click', ()=>{ const name = prompt('会话名称：','�
 input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
 
 // init
-window.addEventListener('load', ()=>{ const sessions = loadSessions(); if(Object.keys(sessions).length===0){ currentSession = createSession('默认会话'); } else { const keys = Object.keys(sessions); currentSession = sessions[keys[keys.length-1]]; } renderSessionList(); loadCurrentSession(); autosizeTextarea(input); input.focus(); });
+window.addEventListener('load', ()=>{
+  const sessions = loadSessions();
+  if(Object.keys(sessions).length===0){ currentSession = createSession('默认会话'); } else {
+    const list = Object.values(sessions).slice().sort((a,b)=>{ const ta = a && a.created ? a.created : 0; const tb = b && b.created ? b.created : 0; return tb - ta; });
+    currentSession = list[0];
+  }
+  renderSessionList(); loadCurrentSession(); autosizeTextarea(input); input.focus();
+
+  // 绑定上传控件相关事件（在 DOM 就绪后）
+  try{
+    initUploadControls();
+  }catch(e){ console.error('initUploadControls threw on load', e); }
+
+});
+
+// 也在 DOMContentLoaded 时尝试初始化（防止部分环境 load 时机差异）
+document.addEventListener('DOMContentLoaded', function(){ try{ initUploadControls(); }catch(e){ console.error('initUploadControls threw on DOMContentLoaded', e); } });

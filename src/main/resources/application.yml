@@ -21,6 +21,7 @@ langchain4j:
       model-name: text-embedding-v3
       log-requests: true
       log-responses: true
+      max-segments-per-batch: 10
 
 spring:
   cache:
