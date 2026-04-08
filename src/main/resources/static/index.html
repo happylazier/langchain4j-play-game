@@ -3,26 +3,47 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>AI 聊天</title>
+    <title>AI 聊天助手</title>
     <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E" />
 </head>
 <body>
 <div class="app">
     <div class="sidebar">
         <div class="sidebar-header">
-            <h3>会话</h3>
-            <button id="newSession" class="create-btn" title="新建会话">新建</button>
+            <h3>AI 会话</h3>
+            <button id="newSession" class="create-btn" title="新建会话">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                新建
+            </button>
         </div>
         <div class="sessions" id="sessions"></div>
         <!-- 将上传控件放回侧边栏底部（可见 file input + 上传 按钮） -->
-        <div style="padding:10px;border-top:1px solid #f0f4fb;display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px;margin-top:auto;">
             <div class="small">会话会保存在浏览器本地，会话 ID 将在发送请求时随请求体发送给后端。</div>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-                <label class="small" style="font-weight:600">上传文件（将发送到 /upload）</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                <label class="small" style="font-weight:600;display:flex;align-items:center;gap:4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    上传文件
+                </label>
                 <input type="file" id="fileInput" />
                 <div style="display:flex;gap:8px;align-items:center;">
-                    <button id="uploadBtn" class="create-btn" style="padding:6px 10px;font-size:13px">上传</button>
-                    <div id="uploadStatus" class="small muted">未上传</div>
+                    <button id="uploadBtn" class="create-btn" style="padding:8px 12px;font-size:13px;flex:1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        上传
+                    </button>
+                    <div id="uploadStatus" class="small muted" style="min-width: 80px;">未选择文件</div>
                 </div>
             </div>
         </div>
@@ -39,9 +60,15 @@
         </div>
 
         <div class="footer">
-            <form id="form" style="display:flex;flex:1;gap:8px;" onsubmit="return false;">
+            <form id="form" style="display:flex;flex:1;gap:12px;" onsubmit="return false;">
                 <textarea id="input" aria-label="消息输入" placeholder="输入消息，按 Enter 发送，Shift+Enter 换行" rows="1"></textarea>
-                <button id="send" class="btn-send">发送</button>
+                <button id="send" class="btn-send">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    发送
+                </button>
             </form>
         </div>
     </div>
